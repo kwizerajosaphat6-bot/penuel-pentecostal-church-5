@@ -1,0 +1,28 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+.vite/
+
+# environment — NEVER commit these
+.env
+.env.*
+!.env.example
+
+# local database files
+*.db
+*.db-journal
+*.sqlite
+
+# editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# logs
+npm-debug.log*
+yarn-error.log*
+*.log

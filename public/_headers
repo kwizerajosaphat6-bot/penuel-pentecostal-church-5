@@ -1,0 +1,45 @@
+# Cloudflare Pages header rules — Penuel Pentecostal Church
+# ------------------------------------------------------------------
+# Applied at the edge to every response. This is the primary security
+# header layer for the website (the API sets its own separately).
+
+/*
+  # --- transport ---
+  Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
+
+  # --- framing / sniffing / referrer ---
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Cross-Origin-Opener-Policy: same-origin
+  Cross-Origin-Resource-Policy: same-origin
+
+  # --- capability lockdown ---
+  Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=(), usb=(), magnetometer=(), accelerometer=(), gyroscope=(), interest-cohort=()
+
+  # --- content security policy ---
+  # NOTE ON 'unsafe-inline' IN script-src:
+  # the production bundle is currently inlined into index.html by
+  # vite-plugin-singlefile, which forces inline <script>. Removing that
+  # plugin (see DEPLOYMENT.md "Tightening the CSP") lets you drop
+  # 'unsafe-inline' entirely. style-src needs it for Tailwind's runtime
+  # style injection.
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://res.cloudinary.com https://www.rccgfcorleans.org https://rccgfcorleans.org https://drive.google.com https://*.googleusercontent.com https://i.imgur.com; font-src 'self' data:; connect-src 'self' https://api.penuelpentecostalchurch.org; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; upgrade-insecure-requests
+
+  # --- do not advertise the stack ---
+  X-Powered-By:
+  Server:
+
+# Hashed build assets never change — cache them forever.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/images/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The HTML shell must always be revalidated so deploys go live instantly.
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/
+  Cache-Control: public, max-age=0, must-revalidate

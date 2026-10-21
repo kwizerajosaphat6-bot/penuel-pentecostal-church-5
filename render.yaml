@@ -1,0 +1,48 @@
+# Render blueprint — Penuel Pentecostal Church API
+# ------------------------------------------------------------------
+# Deploy with: Render Dashboard -> New -> Blueprint -> pick this repo.
+# Secrets marked `sync: false` must be typed into the Render dashboard;
+# they are deliberately NOT stored in this file.
+
+services:
+  - type: web
+    name: penuel-api
+    runtime: node
+    plan: free
+    region: frankfurt # choose the region closest to your congregation
+    rootDir: server
+    buildCommand: npm ci && npx prisma generate && npx prisma migrate deploy
+    startCommand: npm start
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: TRUST_PROXY
+        value: "true"
+      - key: LOG_LEVEL
+        value: info
+      - key: JWT_ACCESS_TTL
+        value: 15m
+      - key: JWT_REFRESH_DAYS
+        value: "7"
+      - key: RATE_LIMIT_AUTH
+        value: "5"
+      - key: RATE_LIMIT_WRITE
+        value: "10"
+      - key: RATE_LIMIT_GENERAL
+        value: "120"
+      - key: ALLOWED_ORIGINS
+        value: https://penuelpentecostalchurch.org,https://www.penuelpentecostalchurch.org
+
+      # ---- secrets: enter these in the Render dashboard ----
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: ADMIN_API_PATH
+        sync: false

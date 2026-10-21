@@ -1,0 +1,25 @@
+# Pentecostal Penuel Church — https://penuelpentecostalchurch.org
+
+User-agent: *
+Allow: /
+
+# Staff area: keep it out of search results.
+# (This is housekeeping only — the area is protected by authentication,
+#  not by this file. robots.txt is public, so never list real secrets.)
+Disallow: /office-7f3a91
+Disallow: /office-7f3a91/
+
+# Common bad-bot / scraper traps
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: PetalBot
+Disallow: /
+
+Sitemap: https://penuelpentecostalchurch.org/sitemap.xml

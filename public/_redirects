@@ -1,0 +1,7 @@
+# Cloudflare Pages redirects — Penuel Pentecostal Church
+# ------------------------------------------------------------------
+# Single-page application: every unknown path must return index.html so
+# the client-side router can handle it. 200 = rewrite (not a redirect),
+# which keeps the URL intact and avoids an extra round trip.
+
+/*    /index.html   200

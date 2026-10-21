@@ -1,0 +1,182 @@
+// Penuel Pentecostal Church — Database Schema
+// ------------------------------------------------------------------
+// Target: Neon (PostgreSQL, serverless).
+//
+// `DATABASE_URL`       -> pooled connection (PgBouncer) used at runtime.
+// `DIRECT_DATABASE_URL`-> direct connection used only for migrations.
+//
+// Neither value ever appears in source; both come from the environment.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+// ---- authentication ------------------------------------------------
+
+enum Role {
+  EDITOR
+  SUPER_ADMIN
+}
+
+model Admin {
+  id            String    @id @default(uuid()) @db.Uuid
+  email         String    @unique
+  passwordHash  String
+  name          String
+  role          Role      @default(EDITOR)
+  // Brute-force protection: account is locked until `lockedUntil`.
+  failedLogins  Int       @default(0)
+  lockedUntil   DateTime?
+  lastLoginAt   DateTime?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  refreshTokens RefreshToken[]
+
+  @@index([email])
+  @@map("admins")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  // Only a SHA-256 hash of the token is stored. A database leak therefore
+  // does not hand an attacker usable sessions.
+  tokenHash String    @unique
+  adminId   String    @db.Uuid
+  // Set when the token is rotated. Presenting a revoked token means the
+  // token was stolen -> the whole family is destroyed (reuse detection).
+  revokedAt DateTime?
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  admin     Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+// ---- public content -------------------------------------------------
+
+model Sermon {
+  id        String   @id @default(uuid()) @db.Uuid
+  day       Int
+  month     String   @db.VarChar(8)
+  title     String   @db.VarChar(200)
+  scripture String   @db.VarChar(200)
+  preacher  String   @db.VarChar(120)
+  audioUrl  String?  @db.VarChar(500)
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([published, createdAt])
+  @@map("sermons")
+}
+
+model Event {
+  id        String   @id @default(uuid()) @db.Uuid
+  day       String   @db.VarChar(8)
+  month     String   @db.VarChar(8)
+  title     String   @db.VarChar(200)
+  time      String   @db.VarChar(60)
+  type      String   @default("Upcoming Event") @db.VarChar(60)
+  detail    String   @db.VarChar(600)
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([published, createdAt])
+  @@map("events")
+}
+
+model Announcement {
+  id        String   @id @default(uuid()) @db.Uuid
+  day       String   @db.VarChar(8)
+  month     String   @db.VarChar(8)
+  title     String   @db.VarChar(200)
+  time      String   @db.VarChar(60)
+  type      String   @default("Announcement") @db.VarChar(60)
+  detail    String   @db.VarChar(600)
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([published, createdAt])
+  @@map("announcements")
+}
+
+model Testimony {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(120)
+  role      String   @db.VarChar(120)
+  quote     String   @db.VarChar(1000)
+  featured  Boolean  @default(false)
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([published, createdAt])
+  @@map("testimonies")
+}
+
+model Service {
+  id          String  @id @default(uuid()) @db.Uuid
+  day         String  @db.VarChar(20)
+  time        String  @db.VarChar(20)
+  name        String  @db.VarChar(120)
+  description String  @db.VarChar(600)
+  featured    Boolean @default(false)
+  sortOrder   Int     @default(0)
+
+  @@index([sortOrder])
+  @@map("services")
+}
+
+// ---- inbound messages ------------------------------------------------
+
+model ContactMessage {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(120)
+  email     String   @db.VarChar(200)
+  subject   String   @db.VarChar(120)
+  message   String   @db.VarChar(4000)
+  read      Boolean  @default(false)
+  // Truncated /24 network only — never a full IP. Enough to spot abuse,
+  // not enough to identify an individual.
+  originHint String? @db.VarChar(45)
+  createdAt DateTime @default(now())
+
+  @@index([read, createdAt])
+  @@map("contact_messages")
+}
+
+model PrayerRequest {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(120)
+  email     String   @db.VarChar(200)
+  message   String   @db.VarChar(4000)
+  prayed    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([prayed, createdAt])
+  @@map("prayer_requests")
+}
+
+// ---- audit -----------------------------------------------------------
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  actor     String   @db.VarChar(200)
+  action    String   @db.VarChar(80)
+  target    String?  @db.VarChar(120)
+  details   String?  @db.VarChar(600)
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("audit_logs")
+}
